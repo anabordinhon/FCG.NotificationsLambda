@@ -14,5 +14,4 @@
   "function-timeout": 30,
   "function-handler": "AWSLambdaEmail::AWSLambdaEmail.Function::FunctionHandler",
   "function-name": "fcg-email-lambda",
-  "function-role": "arn:aws:sns:us-east-1:281515617710:fcg-email-topic"
 }
