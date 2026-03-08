@@ -8,24 +8,22 @@ using System.Text.Json;
 
 namespace AWSLambdaEmail;
 
+// Só Type — Email removido, SNS gerencia os destinatários
 public class EmailRequest
 {
     public string Type { get; set; } = "";
-    public string Email { get; set; } = "";
 }
 
 public class Function
 {
     private readonly AmazonSimpleNotificationServiceClient _snsClient;
-
-    // ARN do tópico SNS — configurado via variável de ambiente na Lambda
     private readonly string _topicArn;
 
     public Function()
     {
         _snsClient = new AmazonSimpleNotificationServiceClient();
         _topicArn = Environment.GetEnvironmentVariable("SNS_TOPIC_ARN")
-            ?? throw new InvalidOperationException("Variável de ambiente SNS_TOPIC_ARN não configurada.");
+            ?? throw new InvalidOperationException("Variável SNS_TOPIC_ARN não configurada.");
     }
 
     public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
@@ -39,9 +37,9 @@ public class Function
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
             );
 
-            if (input == null || string.IsNullOrEmpty(input.Email))
+            if (input == null || string.IsNullOrEmpty(input.Type))
             {
-                context.Logger.LogWarning("Email não informado na mensagem.");
+                context.Logger.LogWarning("Type não informado na mensagem.");
                 continue;
             }
 
@@ -51,16 +49,16 @@ public class Function
             if (input.Type == "welcome")
             {
                 subject = "Boas-vindas à plataforma";
-                message = $"Olá! Bem-vindo à plataforma. Seu cadastro foi realizado com sucesso.";
+                message = "Bem-vindo à plataforma! Seu cadastro foi realizado com sucesso.";
             }
             else if (input.Type == "payment")
             {
                 subject = "Pagamento aprovado";
-                message = $"Seu pagamento foi aprovado com sucesso. Obrigado pela compra!";
+                message = "Seu pagamento foi aprovado com sucesso. Obrigado pela compra!";
             }
             else
             {
-                context.Logger.LogWarning($"Tipo de email inválido: {input.Type}");
+                context.Logger.LogWarning($"Tipo inválido: {input.Type}");
                 continue;
             }
 
@@ -71,8 +69,7 @@ public class Function
                 Message = message
             });
 
-            context.Logger.LogInformation(
-                $"Notificação SNS publicada. Tipo: '{input.Type}', Destino: {input.Email}");
+            context.Logger.LogInformation($"Notificação SNS publicada. Tipo: '{input.Type}'");
         }
     }
 }
