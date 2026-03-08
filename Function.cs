@@ -1,6 +1,8 @@
 using Amazon.Lambda.Core;
-using Amazon.SimpleEmailV2;
-using Amazon.SimpleEmailV2.Model;
+using Amazon.Lambda.SQSEvents;
+using Amazon.SimpleNotificationService;
+using Amazon.SimpleNotificationService.Model;
+using System.Text.Json;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
@@ -14,67 +16,63 @@ public class EmailRequest
 
 public class Function
 {
-    private readonly AmazonSimpleEmailServiceV2Client _sesClient;
+    private readonly AmazonSimpleNotificationServiceClient _snsClient;
+
+    // ARN do tópico SNS — configurado via variável de ambiente na Lambda
+    private readonly string _topicArn;
 
     public Function()
     {
-        _sesClient = new AmazonSimpleEmailServiceV2Client();
+        _snsClient = new AmazonSimpleNotificationServiceClient();
+        _topicArn = Environment.GetEnvironmentVariable("SNS_TOPIC_ARN")
+            ?? throw new InvalidOperationException("Variável de ambiente SNS_TOPIC_ARN não configurada.");
     }
 
-    public async Task<string> FunctionHandler(EmailRequest input, ILambdaContext context)
+    public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
     {
-        if (string.IsNullOrEmpty(input.Email))
-            return "Email não informado";
+        foreach (var record in sqsEvent.Records)
+        {
+            context.Logger.LogInformation($"Mensagem recebida do SQS: {record.Body}");
 
-        string subject;
-        string body;
+            var input = JsonSerializer.Deserialize<EmailRequest>(
+                record.Body,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
 
-        if (input.Type == "welcome")
-        {
-            subject = "Boas-vindas";
-            body = "Bem-vindo à plataforma!";
-        }
-        else if (input.Type == "payment")
-        {
-            subject = "Pagamento aprovado";
-            body = "Seu pagamento foi aprovado com sucesso.";
-        }
-        else
-        {
-            return "Tipo de email inválido";
-        }
-
-        var request = new SendEmailRequest
-        {
-            FromEmailAddress = "daiana.russi.desenvolvedora@gmail.com",
-            Destination = new Destination
+            if (input == null || string.IsNullOrEmpty(input.Email))
             {
-                ToAddresses = new List<string>
-                {
-                    input.Email
-                }
-            },
-            Content = new EmailContent
-            {
-                Simple = new Message
-                {
-                    Subject = new Content
-                    {
-                        Data = subject
-                    },
-                    Body = new Body
-                    {
-                        Text = new Content
-                        {
-                            Data = body
-                        }
-                    }
-                }
+                context.Logger.LogWarning("Email não informado na mensagem.");
+                continue;
             }
-        };
 
-        await _sesClient.SendEmailAsync(request);
+            string subject;
+            string message;
 
-        return "Email enviado com sucesso";
+            if (input.Type == "welcome")
+            {
+                subject = "Boas-vindas à plataforma";
+                message = $"Olá! Bem-vindo à plataforma. Seu cadastro foi realizado com sucesso.";
+            }
+            else if (input.Type == "payment")
+            {
+                subject = "Pagamento aprovado";
+                message = $"Seu pagamento foi aprovado com sucesso. Obrigado pela compra!";
+            }
+            else
+            {
+                context.Logger.LogWarning($"Tipo de email inválido: {input.Type}");
+                continue;
+            }
+
+            await _snsClient.PublishAsync(new PublishRequest
+            {
+                TopicArn = _topicArn,
+                Subject = subject,
+                Message = message
+            });
+
+            context.Logger.LogInformation(
+                $"Notificação SNS publicada. Tipo: '{input.Type}', Destino: {input.Email}");
+        }
     }
 }
