@@ -6,11 +6,13 @@
     "All the command line options for the Lambda command can be specified in this file."
   ],
   "profile": "default",
-  "region": "us-east-2",
+  "region": "us-east-1",
   "configuration": "Release",
-  "function-architecture": "x86_64",
+  "framework": "net8.0",
   "function-runtime": "dotnet8",
-  "function-memory-size": 512,
+  "function-memory-size": 256,
   "function-timeout": 30,
-  "function-handler": "AWSLambdaEmail::AWSLambdaEmail.Function::FunctionHandler"
+  "function-handler": "AWSLambdaEmail::AWSLambdaEmail.Function::FunctionHandler",
+  "function-name": "fcg-email-lambda",
+  "function-role": "arn:aws:sns:us-east-1:281515617710:fcg-email-topic"
 }
