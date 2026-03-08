@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace AWSLambdaEmail;
 
-// SÛ Type ó Email removido, SNS gerencia os destinat·rios
+// S√≥ Type ‚Äî Email removido, SNS gerencia os destinat√°rios
 public class EmailRequest
 {
     public string Type { get; set; } = "";
@@ -23,7 +23,7 @@ public class Function
     {
         _snsClient = new AmazonSimpleNotificationServiceClient();
         _topicArn = Environment.GetEnvironmentVariable("SNS_TOPIC_ARN")
-            ?? throw new InvalidOperationException("Vari·vel SNS_TOPIC_ARN n„o configurada.");
+            ?? throw new InvalidOperationException("Vari√°vel SNS_TOPIC_ARN n√£o configurada.");
     }
 
     public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
@@ -39,7 +39,7 @@ public class Function
 
             if (input == null || string.IsNullOrEmpty(input.Type))
             {
-                context.Logger.LogWarning("Type n„o informado na mensagem.");
+                context.Logger.LogWarning("Type n√£o informado na mensagem.");
                 continue;
             }
 
@@ -48,8 +48,8 @@ public class Function
 
             if (input.Type == "welcome")
             {
-                subject = "Boas-vindas ‡ plataforma";
-                message = "Bem-vindo ‡ plataforma! Seu cadastro foi realizado com sucesso.";
+                subject = "Boas-vindas a plataforma";
+                message = "Bem-vindo a plataforma! Seu cadastro foi realizado com sucesso.";
             }
             else if (input.Type == "payment")
             {
@@ -58,7 +58,7 @@ public class Function
             }
             else
             {
-                context.Logger.LogWarning($"Tipo inv·lido: {input.Type}");
+                context.Logger.LogWarning($"Tipo inv√°lido: {input.Type}");
                 continue;
             }
 
@@ -69,7 +69,7 @@ public class Function
                 Message = message
             });
 
-            context.Logger.LogInformation($"NotificaÁ„o SNS publicada. Tipo: '{input.Type}'");
+            context.Logger.LogInformation($"Notifica√ß√£o SNS publicada. Tipo: '{input.Type}'");
         }
     }
 }
