@@ -1,0 +1,46 @@
+# Build
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Visual Studio
+.vs/
+
+# Rider
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Environment files
+.env
+.env.*
+
+# AWS
+.aws-sam/
+.serverless/
+
+# Lambda build
+*.zip
+
+# Secrets
+appsettings.Development.json
+secrets.json
