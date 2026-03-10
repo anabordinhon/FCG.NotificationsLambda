@@ -13,5 +13,5 @@
   "function-memory-size": 256,
   "function-timeout": 30,
   "function-handler": "AWSLambdaEmail::AWSLambdaEmail.Function::FunctionHandler",
-  "function-name": "fcg-email-lambda",
+  "function-name": "fcg-email-lambda"
 }
