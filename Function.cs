@@ -8,7 +8,6 @@ using System.Text.Json;
 
 namespace AWSLambdaEmail;
 
-// Só Type — Email removido, SNS gerencia os destinatários
 public class EmailRequest
 {
     public string Type { get; set; } = "";
@@ -30,7 +29,19 @@ public class Function
     {
         foreach (var record in sqsEvent.Records)
         {
-            context.Logger.LogInformation($"Mensagem recebida do SQS: {record.Body}");
+            var traceId = record.MessageAttributes
+            .TryGetValue("TraceId", out var traceAttr)
+                ? traceAttr.StringValue
+                : "sem-trace";
+
+            var spanId = record.MessageAttributes
+                .TryGetValue("SpanId", out var spanAttr)
+                    ? spanAttr.StringValue
+                    : "sem-span";
+
+            context.Logger.LogInformation(
+                $"Mensagem recebida do SQS. TraceId: {traceId}, SpanId: {spanId}, Body: {record.Body}");
+
 
             var input = JsonSerializer.Deserialize<EmailRequest>(
                 record.Body,
@@ -39,7 +50,7 @@ public class Function
 
             if (input == null || string.IsNullOrEmpty(input.Type))
             {
-                context.Logger.LogWarning("Type não informado na mensagem.");
+                context.Logger.LogWarning($"Type não informado na mensagem. TraceId: {traceId}");
                 continue;
             }
 
@@ -58,7 +69,7 @@ public class Function
             }
             else
             {
-                context.Logger.LogWarning($"Tipo inválido: {input.Type}");
+                context.Logger.LogWarning($"Tipo inválido: {input.Type}. TraceId: {traceId}");
                 continue;
             }
 
@@ -69,7 +80,7 @@ public class Function
                 Message = message
             });
 
-            context.Logger.LogInformation($"Notificação SNS publicada. Tipo: '{input.Type}'");
+            context.Logger.LogInformation($"Notificação SNS publicada. Tipo: '{input.Type}', TraceId: {traceId}");
         }
     }
 }
