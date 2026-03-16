@@ -2,6 +2,7 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
+using System.Diagnostics;
 using System.Text.Json;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -29,9 +30,17 @@ public class Function
     {
         foreach (var record in sqsEvent.Records)
         {
-         var attrs = record.MessageAttributes ?? new Dictionary<string, SQSEvent.MessageAttribute>();
-        attrs.TryGetValue("traceparent", out var traceParentAttr);
-        var traceParent = traceParentAttr?.StringValue;
+            var attrs = record.MessageAttributes ?? new Dictionary<string, SQSEvent.MessageAttribute>();
+            attrs.TryGetValue("traceparent", out var traceParentAttr);
+            var traceParent = traceParentAttr?.StringValue;
+            string? traceId = null;
+
+            if (!string.IsNullOrWhiteSpace(traceParent) &&
+                ActivityContext.TryParse(traceParent, null, out var ctx))
+            {
+                traceId = ctx.TraceId.ToString();
+            }
+
             context.Logger.LogInformation(
             $"Mensagem recebida do SQS. TraceId: {traceId}, Body: {record.Body}");
 
