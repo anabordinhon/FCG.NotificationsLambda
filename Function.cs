@@ -29,18 +29,11 @@ public class Function
     {
         foreach (var record in sqsEvent.Records)
         {
-            var traceId = record.MessageAttributes
-            .TryGetValue("TraceId", out var traceAttr)
-                ? traceAttr.StringValue
-                : "sem-trace";
-
-            var spanId = record.MessageAttributes
-                .TryGetValue("SpanId", out var spanAttr)
-                    ? spanAttr.StringValue
-                    : "sem-span";
-
+         var attrs = record.MessageAttributes ?? new Dictionary<string, SQSEvent.MessageAttribute>();
+        attrs.TryGetValue("traceparent", out var traceParentAttr);
+        var traceParent = traceParentAttr?.StringValue;
             context.Logger.LogInformation(
-                $"Mensagem recebida do SQS. TraceId: {traceId}, SpanId: {spanId}, Body: {record.Body}");
+            $"Mensagem recebida do SQS. TraceId: {traceId}, Body: {record.Body}");
 
 
             var input = JsonSerializer.Deserialize<EmailRequest>(
